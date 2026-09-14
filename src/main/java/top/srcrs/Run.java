@@ -129,15 +129,8 @@ public class Run {
             for (Object array : jsonArray) {
                 String tiebaName = ((JSONObject) array).getString("forum_name");
                 if ("0".equals(((JSONObject) array).getString("is_sign"))) {
-                    // 将为签到的贴吧加入到 follow 中，待签到
-                    follow.add(tiebaName.replace("+", "%2B"));
-                    // 过滤失效的贴吧
-                    if (Request.isTiebaNotExist(tiebaName)) {
-                        follow.remove(tiebaName);
-                        invalid.add(tiebaName);
-                        failed.add(tiebaName);
-                    }
-                } else {
+    follow.add(tiebaName);
+} else {
                     // 将已经成功签到的贴吧，加入到 success
                     success.add(tiebaName);
                 }
@@ -164,8 +157,8 @@ public class Run {
                 Iterator<String> iterator = follow.iterator();
                 while (iterator.hasNext()) {
                     String s = iterator.next();
-                    String rotation = s.replace("%2B", "+");
-                    String body = "kw=" + s + "&tbs=" + tbs + "&sign=" + Encryption.enCodeMd5("kw=" + rotation + "tbs=" + tbs + "tiebaclient!!!");
+                    String rotation = s;
+String body = "kw=" + URLEncoder.encode(s, "UTF-8") + "&tbs=" + tbs + "&sign=" + Encryption.enCodeMd5("kw=" + s + "tbs=" + tbs + "tiebaclient!!!");
                     JSONObject post = new JSONObject();
                     post = Request.post(SIGN_URL, body);
                     int randomTime = new Random().nextInt(200) + 300;
@@ -176,10 +169,11 @@ public class Run {
                         success.add(rotation);
                         failed.remove(rotation);
                         LOGGER.info(rotation + ": " + "签到成功");
-                    } else {
-                        failed.add(rotation);
-                        LOGGER.warn(rotation + ": " + "签到失败");
-                    }
+                   } else {
+    failed.add(rotation);
+    LOGGER.warn(rotation + ": 签到失败 [error_code=" + post.getString("error_code")
+        + "] [error_msg=" + post.getString("error_msg") + "] [响应=" + post.toJSONString() + "]");
+}
                 }
                 if (success.size() != followNum - invalid.size()) {
                     // 为防止短时间内多次请求接口，触发风控，设置每一轮签到完等待 5 分钟
